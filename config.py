@@ -1,14 +1,32 @@
-# Telegram Gold Bot
+from dataclasses import dataclass
+from dotenv import load_dotenv
+import os
 
-Бот для управления виртуальной валютой G/GT в Telegram.  
-Позволяет пользователям:
 
-- Выводить и пополнять баланс с проверкой достаточности средств  
-- Конвертировать ₸ в G и G в ₸ по курсу 5.5₸ за 1G  
-- Просматривать профиль с никнеймом, балансом, суммой заказов и датой регистрации  
-- Админ может отслеживать оплаты, скриншоты и подтверждать платежи  
+@dataclass
+class Config:
+    bot_token: str
+    admin_ids: list[int]
 
----
 
-## Структура проекта
+def load_config() -> Config:
+    load_dotenv()  # загружает .env
+
+    bot_token = os.getenv("BOT_TOKEN")
+    admin_raw = os.getenv("ADMIN_IDS", "")
+
+    # Преобразование строки "123,456" → [123, 456]
+    admin_ids = []
+    if admin_raw:
+        admin_ids = [int(x) for x in admin_raw.split(",") if x.strip().isdigit()]
+
+    if not bot_token:
+        raise ValueError("BOT_TOKEN не найден. Укажи его в .env.")
+
+    return Config(
+        bot_token=bot_token,
+        admin_ids=admin_ids
+    )
+
+
 
