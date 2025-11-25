@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
@@ -12,6 +13,8 @@ async def set_commands(bot: Bot):
         BotCommand(command="start", description="Запустить бота"),
         BotCommand(command="menu", description="Главное меню"),
         BotCommand(command="profile", description="Профиль"),
+        BotCommand(command="calc", description="Калькулятор Голды"),
+        BotCommand(command="payments", description="Пополнить баланс"),
     ]
     await bot.set_my_commands(commands)
 
@@ -21,6 +24,8 @@ async def main():
 
     # Загружаем конфиг
     config = load_config()
+    if not config.bot_token:
+        raise ValueError("BOT_TOKEN не найден в .env")
 
     # Инициализация бота
     bot = Bot(token=config.bot_token, parse_mode="HTML")
@@ -34,10 +39,11 @@ async def main():
     dp.include_router(payments.router)
     dp.include_router(admin.router)
 
-    # Команды
+    # Установка команд
     await set_commands(bot)
 
-    # Запуск
+    # Запуск бота
+    logging.info("Bot started")
     await dp.start_polling(bot)
 
 
@@ -46,4 +52,3 @@ if __name__ == "__main__":
         asyncio.run(main())
     except KeyboardInterrupt:
         print("Bot stopped")
-
