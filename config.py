@@ -2,12 +2,11 @@ from dataclasses import dataclass
 from dotenv import load_dotenv
 import os
 
-
 @dataclass
 class Config:
     bot_token: str
     admin_ids: list[int]
-
+    rate_tenge_per_g: int  # <-- добавили
 
 def load_config() -> Config:
     load_dotenv()  # загружает .env
@@ -23,9 +22,12 @@ def load_config() -> Config:
     if not bot_token:
         raise ValueError("BOT_TOKEN не найден. Укажи его в .env.")
 
+    rate_tenge_per_g = int(os.getenv("RATE_TENGE_PER_G", 5000))  # значение по умолчанию 5000
+
     return Config(
         bot_token=bot_token,
-        admin_ids=admin_ids
+        admin_ids=admin_ids,
+        rate_tenge_per_g=rate_tenge_per_g
     )
 
 
