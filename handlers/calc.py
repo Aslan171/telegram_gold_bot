@@ -1,8 +1,10 @@
 from aiogram import types
 from utils.keyboards import main_menu_keyboard
+from config import load_config
 
-# Конверсия курса
-TENGE_TO_GOLD = 5.5
+# Загружаем конфиг
+config = load_config()
+TENGE_TO_GOLD = config.rate_tenge_per_g  # теперь курс берётся из .env
 
 async def вывести_handler(message: types.Message, user_balance: float):
     text = f"🍯Введите количество голды, которое желаете вывести 🔐На вашем балансе: {user_balance} G"
