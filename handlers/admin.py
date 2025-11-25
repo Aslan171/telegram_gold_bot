@@ -1,7 +1,11 @@
 from aiogram import Router, types
 from utils.keyboards import admin_menu
-from config import ADMIN_ID
+from config import load_config
 from services.db import get_all_payments, mark_payment_done
+
+# Загружаем конфиг
+config = load_config()
+ADMIN_ID = config.admin_ids[0]  # Берём первого админа
 
 router = Router()
 
