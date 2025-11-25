@@ -1,8 +1,12 @@
 from aiogram import Router, types
 from utils.keyboards import calc_menu, main_menu
-from config import RATE_TENGE_PER_G
+from config import load_config
 
 router = Router()
+
+# Загружаем конфиг
+config = load_config()
+RATE_TENGE_PER_G = config.rate_tenge_per_g  # курс для конвертации
 
 # Старт кнопки "Посчитать"
 async def calc_start(message: types.Message):
@@ -18,11 +22,11 @@ async def calc_handler(callback: types.CallbackQuery):
 
     if data == "calc_tenge_to_g":
         await callback.message.answer("🧾 Введите сумму в ₸ для расчёта:")
-        # далее нужно ловить текст пользователя и считать
+        # здесь потом можно ловить текст пользователя и считать через RATE_TENGE_PER_G
         await callback.answer()
     elif data == "calc_g_to_tenge":
         await callback.message.answer("⚙️ Введите сумму в G для расчёта:")
-        # далее ловим текст и считаем
+        # здесь тоже ловим текст и считаем через RATE_TENGE_PER_G
         await callback.answer()
     elif data == "calc_back":
         await callback.message.answer(
@@ -30,5 +34,6 @@ async def calc_handler(callback: types.CallbackQuery):
             reply_markup=main_menu()
         )
         await callback.answer()
+
 
 
