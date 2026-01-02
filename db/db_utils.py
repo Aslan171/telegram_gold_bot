@@ -2,7 +2,6 @@ import asyncpg
 import os
 from decimal import Decimal
 from typing import Optional, Dict, Any
-from config import DATABASE_URL  # берем DATABASE_URL из config.py
 
 _pool: Optional[asyncpg.Pool] = None
 
@@ -15,7 +14,7 @@ async def init_db_pool(database_url: str = None):
     global _pool
 
     # если аргумент передан, используем его, иначе берём из config
-    database_url = database_url or DATABASE_URL
+    database_url = database_url or os.getenv("DATABASE_URL")
 
     if not database_url:
         raise RuntimeError("DATABASE_URL не найден! Проверьте .env или Variables на сервере")
