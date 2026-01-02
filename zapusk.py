@@ -1,21 +1,26 @@
 import asyncio
 import os
-from dotenv import load_dotenv
+from pathlib import Path
 
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.client.default import DefaultBotProperties  # <- вот это вместо ParseMode
+from aiogram.client.default import DefaultBotProperties  # <- вместо ParseMode
 
-# Загрузка переменных окружения
-load_dotenv()
+# Проверяем, есть ли локальный .env (для разработки)
+env_path = Path(".") / ".env"
+if env_path.exists():
+    from dotenv import load_dotenv
+    load_dotenv(dotenv_path=env_path)  # загружаем только локально
+
+# Получаем переменные окружения
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not BOT_TOKEN:
-    raise RuntimeError("BOT_TOKEN не найден! Проверьте файл .env")
+    raise RuntimeError("BOT_TOKEN не найден! Проверьте .env (локально) или Variables (на сервере)")
 
 if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL не найден! Проверьте файл .env")
+    raise RuntimeError("DATABASE_URL не найден! Проверьте .env (локально) или Variables (на сервере)")
 
 # Импорт хэндлеров и утилит БД
 from handlers import menu_handlers, withdraw, deposit, calculate, admin_handlers
