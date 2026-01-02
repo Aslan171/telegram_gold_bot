@@ -4,13 +4,13 @@ from pathlib import Path
 
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.client.default import DefaultBotProperties  # <- вместо ParseMode
+from aiogram.client.default import DefaultBotProperties
 
-# --- Локальная разработка: загружаем .env только если он есть ---
+# --- Локальная разработка: подгружаем .env если есть ---
 env_path = Path(".") / ".env"
 if env_path.exists():
     from dotenv import load_dotenv
-    load_dotenv(dotenv_path=env_path)
+    load_dotenv(dotenv_path=env_path)  # загружаем локальные переменные
 
 # --- Получаем переменные окружения ---
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -20,27 +20,17 @@ CURRENCY_RATE = os.getenv("CURRENCY_RATE")
 MIN_DEPOSIT = os.getenv("MIN_DEPOSIT")
 WITHDRAW_MULTIPLIER = os.getenv("WITHDRAW_MULTIPLIER")
 
-# --- Проверка наличия обязательных переменных ---
-missing_vars = []
+# --- Проверка обязательных переменных ---
 if not BOT_TOKEN:
-    missing_vars.append("BOT_TOKEN")
+    raise RuntimeError("BOT_TOKEN не найден! Проверьте .env или Variables на сервере")
 if not DATABASE_URL:
-    missing_vars.append("DATABASE_URL")
+    raise RuntimeError("DATABASE_URL не найден! Проверьте .env или Variables на сервере")
 
-if missing_vars:
-    raise RuntimeError(
-        f"Следующие обязательные переменные не найдены: {', '.join(missing_vars)}. "
-        "Проверьте .env (локально) или Variables (на сервере)"
-    )
-
-# --- DEBUG: покажем, что реально подхватилось (удобно для локальной проверки) ---
+# --- DEBUG: покажем что реально подхватилось ---
 print("=== ENVIRONMENT CHECK ===")
 print("BOT_TOKEN:", BOT_TOKEN)
 print("DATABASE_URL:", DATABASE_URL)
 print("ADMIN_IDS:", ADMIN_IDS)
-print("CURRENCY_RATE:", CURRENCY_RATE)
-print("MIN_DEPOSIT:", MIN_DEPOSIT)
-print("WITHDRAW_MULTIPLIER:", WITHDRAW_MULTIPLIER)
 print("=========================")
 
 # --- Импорт хэндлеров и утилит БД ---
@@ -48,7 +38,7 @@ from handlers import menu_handlers, withdraw, deposit, calculate, admin_handlers
 from db.db_utils import init_db_pool, close_db_pool
 
 async def main():
-    # Создаём бот с HTML-парсом через DefaultBotProperties
+    # Создаём бота
     bot = Bot(
         token=BOT_TOKEN,
         default=DefaultBotProperties(parse_mode="HTML")
@@ -56,14 +46,12 @@ async def main():
 
     # FSM хранилище
     storage = MemoryStorage()
-
-    # Диспетчер
     dp = Dispatcher(storage=storage)
 
-    # Инициализация пула БД
-    await init_db_pool(DATABASE_URL)
+    # --- Инициализация пула БД ---
+    await init_db_pool(DATABASE_URL)  # теперь работает без ошибки TypeError
 
-    # Подключаем роутеры
+    # --- Подключение роутеров ---
     dp.include_router(menu_handlers.router)
     dp.include_router(withdraw.router)
     dp.include_router(deposit.router)
@@ -72,13 +60,10 @@ async def main():
 
     print("Bot started")
     try:
-        # Старт поллинга
         await dp.start_polling(bot)
     finally:
-        # Закрываем сессию бота и пул БД
         await bot.session.close()
         await close_db_pool()
-
 
 if __name__ == "__main__":
     asyncio.run(main())
