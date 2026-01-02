@@ -10,15 +10,18 @@ _pool: Optional[asyncpg.Pool] = None
 # INIT / CLOSE
 # =========================
 
-async def init_db_pool():
+async def init_db_pool(database_url: str = None):
     """Инициализация пула БД через DATABASE_URL"""
     global _pool
 
-    if not DATABASE_URL:
-        raise RuntimeError("DATABASE_URL не найден! Проверьте .env")
+    # если аргумент передан, используем его, иначе берём из config
+    database_url = database_url or DATABASE_URL
+
+    if not database_url:
+        raise RuntimeError("DATABASE_URL не найден! Проверьте .env или Variables на сервере")
 
     _pool = await asyncpg.create_pool(
-        dsn=DATABASE_URL,
+        dsn=database_url,
         min_size=1,
         max_size=10
     )
