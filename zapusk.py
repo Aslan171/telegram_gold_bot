@@ -10,7 +10,7 @@ from aiogram.client.default import DefaultBotProperties  # <- вместо Parse
 env_path = Path(".") / ".env"
 if env_path.exists():
     from dotenv import load_dotenv
-    load_dotenv(dotenv_path=env_path)  # подгрузка локальных переменных
+    load_dotenv(dotenv_path=env_path)
 
 # --- Получаем переменные окружения ---
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -21,20 +21,26 @@ MIN_DEPOSIT = os.getenv("MIN_DEPOSIT")
 WITHDRAW_MULTIPLIER = os.getenv("WITHDRAW_MULTIPLIER")
 
 # --- Проверка наличия обязательных переменных ---
+missing_vars = []
 if not BOT_TOKEN:
-    raise RuntimeError(
-        "BOT_TOKEN не найден! Проверьте .env (локально) или Variables (на сервере)"
-    )
+    missing_vars.append("BOT_TOKEN")
 if not DATABASE_URL:
+    missing_vars.append("DATABASE_URL")
+
+if missing_vars:
     raise RuntimeError(
-        "DATABASE_URL не найден! Проверьте .env (локально) или Variables (на сервере)"
+        f"Следующие обязательные переменные не найдены: {', '.join(missing_vars)}. "
+        "Проверьте .env (локально) или Variables (на сервере)"
     )
 
-# --- DEBUG: покажем, что реально подхватилось ---
+# --- DEBUG: покажем, что реально подхватилось (удобно для локальной проверки) ---
 print("=== ENVIRONMENT CHECK ===")
 print("BOT_TOKEN:", BOT_TOKEN)
 print("DATABASE_URL:", DATABASE_URL)
 print("ADMIN_IDS:", ADMIN_IDS)
+print("CURRENCY_RATE:", CURRENCY_RATE)
+print("MIN_DEPOSIT:", MIN_DEPOSIT)
+print("WITHDRAW_MULTIPLIER:", WITHDRAW_MULTIPLIER)
 print("=========================")
 
 # --- Импорт хэндлеров и утилит БД ---
@@ -72,6 +78,7 @@ async def main():
         # Закрываем сессию бота и пул БД
         await bot.session.close()
         await close_db_pool()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
