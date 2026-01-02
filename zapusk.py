@@ -1,5 +1,10 @@
+import asyncio
 import os
 from pathlib import Path
+
+from aiogram import Bot, Dispatcher
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.client.default import DefaultBotProperties  # <- вместо ParseMode
 
 # Локальная разработка: подгружаем .env, если он есть
 env_path = Path(".") / ".env"
@@ -17,15 +22,11 @@ WITHDRAW_MULTIPLIER = os.getenv("WITHDRAW_MULTIPLIER")
 
 # Проверка
 if not BOT_TOKEN:
-    raise RuntimeError(
-        "BOT_TOKEN не найден! Проверьте .env (локально) или Variables (на сервере)"
-    )
+    raise RuntimeError("BOT_TOKEN не найден! Проверьте .env или Variables на сервере")
 if not DATABASE_URL:
-    raise RuntimeError(
-        "DATABASE_URL не найден! Проверьте .env (локально) или Variables (на сервере)"
-    )
+    raise RuntimeError("DATABASE_URL не найден! Проверьте .env или Variables на сервере")
 
-# Для дебага: на сервере можно раскомментировать, чтобы увидеть, что подхватывается
+# Для дебага локально или на сервере
 print("BOT_TOKEN:", BOT_TOKEN)
 print("DATABASE_URL:", DATABASE_URL)
 print("ADMIN_IDS:", ADMIN_IDS)
