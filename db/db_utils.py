@@ -9,11 +9,11 @@ _pool: Optional[asyncpg.Pool] = None
 # INIT / CLOSE
 # =========================
 
-async def init_db_pool(database_url: str = None):
-    """Инициализация пула БД через переданный URL или DATABASE_URL из env"""
+async def init_db_pool():
+    """Инициализация пула БД через DATABASE_URL из env"""
     global _pool
 
-    database_url = database_url or os.getenv("DATABASE_URL")
+    database_url = os.getenv("DATABASE_URL")
     if not database_url:
         raise RuntimeError("DATABASE_URL не найден! Проверьте .env или Variables на сервере")
 
@@ -211,5 +211,6 @@ async def mark_notification_read(notification_id: int):
     global _pool
     async with _pool.acquire() as conn:
         await conn.execute("UPDATE admin_notifications SET read_by_admin = TRUE WHERE id=$1", notification_id)
+
 
 
