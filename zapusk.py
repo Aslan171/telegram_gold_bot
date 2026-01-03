@@ -49,7 +49,7 @@ async def main():
     dp = Dispatcher(storage=storage)
 
     # --- Инициализация пула БД ---
-    await init_db_pool(DATABASE_URL)  # теперь работает без ошибки TypeError
+    await init_db_pool()  # теперь работает без ошибки TypeError
 
     # --- Подключение роутеров ---
     dp.include_router(menu_handlers.router)
@@ -67,3 +67,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
