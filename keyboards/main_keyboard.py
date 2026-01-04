@@ -1,23 +1,29 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-def build_main_kb():
-    kb = ReplyKeyboardMarkup(resize_keyboard=True)
 
-    kb.add(
-        KeyboardButton(text="💰Пополнить"),
-        KeyboardButton(text="🌟Вывести")
+def build_main_kb() -> ReplyKeyboardMarkup:
+    kb = ReplyKeyboardMarkup(
+        resize_keyboard=True,
+        keyboard=[
+            [
+                KeyboardButton(text="💰Пополнить"),
+                KeyboardButton(text="🌟Вывести")
+            ],
+            [
+                KeyboardButton(text="🔢Посчитать"),
+                KeyboardButton(text="🆔Профиль")
+            ],
+            [
+                KeyboardButton(text="✅О боте"),
+                KeyboardButton(text="📖Помощь и ответы")
+            ],
+            [
+                KeyboardButton(text="✨Продать голду"),
+                KeyboardButton(text="🕹️Сменить игру")
+            ],
+            [
+                KeyboardButton(text="📖Правила вывода Gold")
+            ]
+        ]
     )
-    kb.add(
-        KeyboardButton(text="🔢Посчитать"),
-        KeyboardButton(text="🆔Профиль")
-    )
-    kb.add(
-        KeyboardButton(text="📖Помощь и ответы"),
-        KeyboardButton(text="✅О боте")
-    )
-    kb.add(
-        KeyboardButton(text="✨Продать голду"),
-        KeyboardButton(text="🕹️Сменить игру")
-    )
-
     return kb
