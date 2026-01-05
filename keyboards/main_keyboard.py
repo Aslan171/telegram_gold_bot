@@ -1,7 +1,8 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
+
 def build_main_kb() -> ReplyKeyboardMarkup:
-    return ReplyKeyboardMarkup(
+    kb = ReplyKeyboardMarkup(
         resize_keyboard=True,
         keyboard=[
             [
@@ -21,8 +22,8 @@ def build_main_kb() -> ReplyKeyboardMarkup:
                 KeyboardButton(text="🕹️Сменить игру")
             ],
             [
-                KeyboardButton(text="📖Правила вывода Gold"),
-                KeyboardButton(text="🏠Главное меню")
+                KeyboardButton(text="📖Правила вывода Gold")
             ]
         ]
     )
+    return kb
