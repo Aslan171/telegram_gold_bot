@@ -44,7 +44,7 @@ async def main_menu(message: Message, state: FSMContext):
 # =========================
 # Пополнить
 # =========================
-@router.message(F.text == "💰Пополнить", state="*")
+@router.message(F.text == "💰Пополнить")
 async def deposit_start(message: Message, state: FSMContext):
     await state.set_state(DepositState.amount)
     await message.answer(
@@ -142,3 +142,4 @@ async def rules_gold(message: Message):
         "• Проверка администратором\n"
         "• Вывод только после подтверждения"
     )
+
