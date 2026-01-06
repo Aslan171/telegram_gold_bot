@@ -1,0 +1,14 @@
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+
+def build_main_kb() -> ReplyKeyboardMarkup:
+    kb = ReplyKeyboardMarkup(
+        resize_keyboard=True,
+        keyboard=[
+            [KeyboardButton("💰Пополнить"), KeyboardButton("🌟Вывести")],
+            [KeyboardButton("🔢Посчитать"), KeyboardButton("🆔Профиль")],
+            [KeyboardButton("✅О боте"), KeyboardButton("📖Помощь и ответы")],
+            [KeyboardButton("✨Продать голду"), KeyboardButton("🕹️Сменить игру")],
+            [KeyboardButton("📖Правила вывода Gold")]
+        ]
+    )
+    return kb
