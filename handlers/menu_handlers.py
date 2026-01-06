@@ -1,187 +1,191 @@
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, PhotoSize
+from aiogram.types import (
+    Message,
+    CallbackQuery,
+    PhotoSize
+)
+from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
+from aiogram.utils.keyboard import (
+    ReplyKeyboardBuilder,
+    InlineKeyboardBuilder
+)
+
 from decimal import Decimal, ROUND_DOWN, InvalidOperation
 import os
 
-from states.user_states import DepositState, WithdrawState, CalculateState
+from states.user_states import DepositState
 from db.db_utils import ensure_user, create_deposit, attach_deposit_receipt, get_balances
-from keyboards.main_keyboard import build_main_kb
 from utils.image_utils import save_photo
 
 router = Router()
 
 RATE = Decimal(os.getenv("CURRENCY_RATE", "5.6"))
-MIN_DEPOSIT = Decimal(os.getenv("MIN_DEPOSIT", "210.0"))
+MIN_DEPOSIT = Decimal(os.getenv("MIN_DEPOSIT", "210"))
 
-# ==========================
-# /start — Драконий привет
-# ==========================
-@router.message(F.text == "/start")
+# =========================
+# MAIN KEYBOARD (REPLY)
+# =========================
+def build_main_kb():
+    kb = ReplyKeyboardBuilder()
+    kb.button(text="💰Deposit")
+    kb.button(text="🌟Withdraw")
+    kb.button(text="🔢Calculate")
+    kb.button(text="🆔Profile")
+    kb.adjust(2)
+    return kb.as_markup(resize_keyboard=True)
+
+# =========================
+# /start
+# =========================
+@router.message(CommandStart())
 async def start_handler(message: Message, state: FSMContext):
     await state.clear()
-    await ensure_user(message.from_user.id, message.from_user.username, message.from_user.full_name)
-
-    start_text = (
-        "🐉 **Добро пожаловать, воин Standoff2!**\n\n"
-        "Ты попал в драконье хранилище Голды 🏆 — здесь можно покупать и продавать игровую валюту за реальные тенге.\n\n"
-        "💰 Преврати свои деньги в G Голды и усили своего персонажа!\n\n"
-        "⚔️ Чтобы начать, выбери действие ниже:"
+    await ensure_user(
+        message.from_user.id,
+        message.from_user.username,
+        message.from_user.full_name
     )
-    
-    kb = build_main_kb()
-    await message.answer(start_text, reply_markup=kb)
 
-# ==========================
-# Menu — Главные кнопки
-# ==========================
-@router.message(F.text == "🏠Main Menu")
-async def main_menu(message: Message, state: FSMContext):
-    await state.clear()
-    kb = build_main_kb()
-    await message.answer("🏠 Main Menu", reply_markup=kb)
+    text = (
+        "🐉 <b>Добро пожаловать, воин Standoff2!</b>\n\n"
+        "Ты вошёл в <b>Драконье хранилище Голды</b> 🏆\n\n"
+        "🔥 Покупка и продажа G за реальные тенге\n"
+        "⚡ Быстро • Честно • Безопасно\n\n"
+        "⚔️ Выбери действие ниже:"
+    )
 
-# ==========================
-# Deposit — начало
-# ==========================
+    await message.answer(text, reply_markup=build_main_kb())
+
+# =========================
+# DEPOSIT — START
+# =========================
 @router.message(F.text == "💰Deposit")
 async def deposit_start(message: Message, state: FSMContext):
-    await ensure_user(message.from_user.id, message.from_user.username, message.from_user.full_name)
     await state.set_state(DepositState.amount)
     await message.answer(
-        "🕹 Укажи сумму в ₸, на которую планируешь покупку — я сразу скажу, сколько Голды ты получишь!",
+        "💰 Введите сумму в ₸ (тенге), которую хотите пополнить:",
         reply_markup=None
     )
 
-# Ввод суммы депозита
+# =========================
+# DEPOSIT — AMOUNT
+# =========================
 @router.message(DepositState.amount)
-async def handle_deposit_amount(message: Message, state: FSMContext):
-    text = message.text.strip().replace(",", ".")
-    if text in ["⏪Перейти назад", "🏠Главное меню"]:
-        await state.clear()
-        await message.answer("🏠 Главное меню", reply_markup=build_main_kb())
-        return
+async def deposit_amount(message: Message, state: FSMContext):
+    text = message.text.replace(",", ".").strip()
 
     try:
         amount = Decimal(text)
     except InvalidOperation:
-        await message.answer("Введите корректную сумму в тенге (например: 560).", reply_markup=None)
+        await message.answer("❌ Введите корректное число (например 560)")
         return
 
     if amount < MIN_DEPOSIT:
-        await message.answer(f"‼️ Минимальная сумма пополнения - {MIN_DEPOSIT}₸", reply_markup=None)
+        await message.answer(f"⚠️ Минимум: {MIN_DEPOSIT}₸")
         return
 
-    amount_gt = (amount / RATE).quantize(Decimal("0.00"), rounding=ROUND_DOWN)
-    deposit_id = await create_deposit(message.from_user.id, amount, amount_gt)
-    await state.update_data(deposit_id=deposit_id, amount=amount, amount_gt=amount_gt)
+    amount_g = (amount / RATE).quantize(Decimal("0.00"), rounding=ROUND_DOWN)
+    deposit_id = await create_deposit(message.from_user.id, amount, amount_g)
 
-    # Inline кнопки выбора метода оплаты
-    kb = InlineKeyboardMarkup(row_width=2)
-    kb.add(
-        InlineKeyboardButton(text="🔴Каспи", callback_data="deposit_method:kaspi"),
-        InlineKeyboardButton(text="⏪Перейти назад", callback_data="deposit_cancel")
+    await state.update_data(
+        deposit_id=deposit_id,
+        amount=amount,
+        amount_g=amount_g
     )
+
+    kb = InlineKeyboardBuilder()
+    kb.button(text="🔴 Kaspi", callback_data="deposit_method:kaspi")
+    kb.button(text="❌ Отмена", callback_data="deposit_cancel")
+    kb.adjust(2)
 
     await message.answer(
-        f"📥 Пополнив на {amount}₸ вы получаете {amount_gt}G Голды\n\n"
-        "💳 Выберите способ оплаты:",
-        reply_markup=kb
+        f"📥 Вы получите <b>{amount_g} G</b>\n"
+        f"💳 Сумма к оплате: <b>{amount}₸</b>\n\n"
+        "Выберите способ оплаты:",
+        reply_markup=kb.as_markup()
     )
 
-# ==========================
-# Callback — выбор метода оплаты
-# ==========================
+# =========================
+# DEPOSIT — METHOD
+# =========================
 @router.callback_query(F.data.startswith("deposit_method:"))
-async def handle_deposit_method(call: CallbackQuery, state: FSMContext):
-    method = call.data.split(":")[1]
+async def deposit_method(call: CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    deposit_id = data.get("deposit_id")
     amount = data.get("amount")
 
-    if not deposit_id:
-        await call.message.answer("❗ Произошла ошибка, начните снова.", reply_markup=build_main_kb())
+    if not amount:
+        await call.message.answer("❌ Ошибка. Начните заново.")
         await state.clear()
         return
 
-    card_number = "4400-4303-3359-3462"
-    
-    # Inline кнопка подтверждения оплаты
-    confirm_kb = InlineKeyboardMarkup(row_width=2)
-    confirm_kb.add(
-        InlineKeyboardButton(text="✅ Я оплатил", callback_data="deposit_confirm"),
-        InlineKeyboardButton(text="❌ Отмена", callback_data="deposit_cancel")
-    )
+    card = "4400 4303 3359 3462"
+
+    kb = InlineKeyboardBuilder()
+    kb.button(text="✅ Я оплатил", callback_data="deposit_confirm")
+    kb.button(text="❌ Отмена", callback_data="deposit_cancel")
+    kb.adjust(2)
 
     await call.message.edit_text(
-        f"🏦 Банк для оплаты: 🔴 {method.capitalize()}\n"
-        f"👤 Получатель: Аслан Ш\n"
-        f"💳 Реквизиты: {card_number}\n"
-        f"💰 Сумма: {amount}₸\n\n"
-        f"После оплаты нажмите кнопку 'Я оплатил'",
-        reply_markup=confirm_kb
+        f"🏦 <b>Kaspi Bank</b>\n\n"
+        f"👤 Получатель: <b>Аслан Ш</b>\n"
+        f"💳 Карта: <code>{card}</code>\n"
+        f"💰 Сумма: <b>{amount}₸</b>\n\n"
+        "После оплаты нажмите кнопку ниже:",
+        reply_markup=kb.as_markup()
     )
+
     await state.set_state(DepositState.waiting_receipt)
 
-# ==========================
-# Callback — отмена депозита
-# ==========================
+# =========================
+# DEPOSIT — CONFIRM
+# =========================
+@router.callback_query(F.data == "deposit_confirm")
+async def deposit_confirm(call: CallbackQuery):
+    await call.message.answer(
+        "📸 Отправьте скриншот квитанции об оплате."
+    )
+
+# =========================
+# DEPOSIT — CANCEL
+# =========================
 @router.callback_query(F.data == "deposit_cancel")
 async def deposit_cancel(call: CallbackQuery, state: FSMContext):
     await state.clear()
-    await call.message.edit_text("❌ Пополнение отменено.", reply_markup=None)
+    await call.message.edit_text("❌ Пополнение отменено.")
 
-# ==========================
-# Пользователь прислал фото квитанции
-# ==========================
-@router.message(DepositState.waiting_receipt, F.content_type == "photo")
-async def receive_receipt(message: Message, state: FSMContext):
+# =========================
+# DEPOSIT — RECEIPT PHOTO
+# =========================
+@router.message(DepositState.waiting_receipt, F.photo)
+async def deposit_receipt(message: Message, state: FSMContext):
     data = await state.get_data()
     deposit_id = data.get("deposit_id")
+
     if not deposit_id:
-        await message.answer("❗ Произошла ошибка, начните снова.", reply_markup=build_main_kb())
+        await message.answer("❌ Ошибка. Начните заново.")
         await state.clear()
         return
 
     photo: PhotoSize = message.photo[-1]
-    file_path = await save_photo(photo, message.from_user.id)
-    await attach_deposit_receipt(deposit_id, file_path)
+    path = await save_photo(photo, message.from_user.id)
+    await attach_deposit_receipt(deposit_id, path)
 
     await message.answer(
-        "🔹 Квитанция получена. Ожидайте проверки админом.",
-        reply_markup=None
+        "✅ Квитанция получена.\n"
+        "⏳ Ожидайте подтверждения администратором."
     )
+
     await state.clear()
 
-# ==========================
-# Withdraw — пример
-# ==========================
-@router.message(F.text == "🌟Withdraw")
-async def withdraw_start(message: Message, state: FSMContext):
-    await ensure_user(message.from_user.id)
-    await state.set_state(WithdrawState.amount)
-    await message.answer("Введите сумму для вывода:", reply_markup=None)
-
-# ==========================
-# Calculate — пример
-# ==========================
-@router.message(F.text == "🔢Calculate")
-async def calculate_start(message: Message, state: FSMContext):
-    await state.set_state(CalculateState.mode)
-    await message.answer("Выберите конвертацию:", reply_markup=None)
-
-# ==========================
-# Profile, Help, About
-# ==========================
+# =========================
+# PROFILE
+# =========================
 @router.message(F.text == "🆔Profile")
 async def profile(message: Message):
-    balances = await get_balances(message.from_user.id)
-    await message.answer(f"Ваш профиль:\nG: {balances['g_balance']}\nGT: {balances['gt_balance']}")
-
-@router.message(F.text == "📖Help & FAQ")
-async def help_bot(message: Message):
-    await message.answer("FAQ и ответы здесь...")
-
-@router.message(F.text == "✅About Bot")
-async def about_bot(message: Message):
-    await message.answer("Информация о боте...")
+    b = await get_balances(message.from_user.id)
+    await message.answer(
+        f"👤 <b>Ваш профиль</b>\n\n"
+        f"💰 G: <b>{b['g_balance']}</b>\n"
+        f"🏦 GT: <b>{b['gt_balance']}</b>"
+    )
