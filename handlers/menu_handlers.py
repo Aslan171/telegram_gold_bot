@@ -56,7 +56,7 @@ async def deposit_start(message: Message, state: FSMContext):
 # =========================
 # Вывести
 # =========================
-@router.message(F.text == "🌟Вывести", state="*")
+@router.message(F.text == "🌟Вывести")
 async def withdraw_start(message: Message, state: FSMContext):
     await state.set_state(WithdrawState.amount)
     await message.answer(
@@ -68,7 +68,7 @@ async def withdraw_start(message: Message, state: FSMContext):
 # =========================
 # Посчитать
 # =========================
-@router.message(F.text == "🔢Посчитать", state="*")
+@router.message(F.text == "🔢Посчитать")
 async def calculate_start(message: Message, state: FSMContext):
     await state.set_state(CalculateState.mode)
     await message.answer(
@@ -80,7 +80,7 @@ async def calculate_start(message: Message, state: FSMContext):
 # =========================
 # Профиль
 # =========================
-@router.message(F.text == "🆔Профиль", state="*")
+@router.message(F.text == "🆔Профиль")
 async def profile(message: Message):
     balances = await get_balances(message.from_user.id)
     await message.answer(
@@ -93,7 +93,7 @@ async def profile(message: Message):
 # =========================
 # О боте
 # =========================
-@router.message(F.text == "✅О боте", state="*")
+@router.message(F.text == "✅О боте")
 async def about_bot(message: Message):
     await message.answer(
         "🐉 <b>DragonX Gold</b>\n\n"
@@ -105,7 +105,7 @@ async def about_bot(message: Message):
 # =========================
 # Помощь
 # =========================
-@router.message(F.text == "📖Помощь и ответы", state="*")
+@router.message(F.text == "📖Помощь и ответы")
 async def help_bot(message: Message):
     await message.answer(
         "📖 <b>Помощь</b>\n\n"
@@ -118,7 +118,7 @@ async def help_bot(message: Message):
 # =========================
 # Продать голду (заглушка)
 # =========================
-@router.message(F.text == "✨Продать голду", state="*")
+@router.message(F.text == "✨Продать голду")
 async def sell_gold(message: Message):
     await message.answer("✨ Продажа Gold скоро будет доступна.")
 
@@ -126,7 +126,7 @@ async def sell_gold(message: Message):
 # =========================
 # Сменить игру (заглушка)
 # =========================
-@router.message(F.text == "🕹️Сменить игру", state="*")
+@router.message(F.text == "🕹️Сменить игру")
 async def change_game(message: Message):
     await message.answer("🕹️ Смена игры в разработке.")
 
@@ -134,7 +134,7 @@ async def change_game(message: Message):
 # =========================
 # Правила вывода
 # =========================
-@router.message(F.text == "📖Правила вывода Gold", state="*")
+@router.message(F.text == "📖Правила вывода Gold")
 async def rules_gold(message: Message):
     await message.answer(
         "📖 <b>Правила вывода Gold</b>\n\n"
@@ -142,4 +142,3 @@ async def rules_gold(message: Message):
         "• Проверка администратором\n"
         "• Вывод только после подтверждения"
     )
-
