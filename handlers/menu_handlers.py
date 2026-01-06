@@ -8,7 +8,7 @@ from keyboards.main_keyboard import build_main_kb
 router = Router()
 
 # /start
-@router.message(F.command == "/start")
+@router.message(Command("start"))
 async def start_handler(message: Message, state: FSMContext):
     await state.clear()
     await ensure_user(message.from_user.id, message.from_user.username, message.from_user.full_name)
@@ -76,4 +76,5 @@ async def change_game(message: Message):
 @router.message(F.text == "📖Правила вывода Gold", state="*")
 async def rules_gold(message: Message):
     await message.answer("Правила вывода Голды будут здесь...")
+
 
