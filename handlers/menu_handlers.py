@@ -35,7 +35,7 @@ async def start_handler(message: Message, state: FSMContext):
 # =========================
 # Главное меню
 # =========================
-@router.message(F.text == "🏠Главное меню", state="*")
+@router.message(F.text == "🏠Главное меню")
 async def main_menu(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("🏠 Главное меню", reply_markup=build_main_kb())
@@ -142,3 +142,4 @@ async def rules_gold(message: Message):
         "• Проверка администратором\n"
         "• Вывод только после подтверждения"
     )
+
