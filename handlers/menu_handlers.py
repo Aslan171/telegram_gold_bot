@@ -14,6 +14,7 @@ router = Router()
 # =========================
 @router.message(CommandStart())
 async def start_handler(message: Message, state: FSMContext):
+    print("Handler /start triggered")
     await state.clear()
     await ensure_user(
         message.from_user.id,
@@ -142,3 +143,4 @@ async def rules_gold(message: Message):
         "• Проверка администратором\n"
         "• Вывод только после подтверждения"
     )
+
