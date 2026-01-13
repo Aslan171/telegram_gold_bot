@@ -19,11 +19,11 @@ async def start_handler(message: Message, state: FSMContext):
 
     await state.clear()
 
-    await ensure_user(
-        message.from_user.id,
-        message.from_user.username,
-        message.from_user.full_name
-    )
+    # await ensure_user(
+    #     message.from_user.id,
+    #     message.from_user.username,
+    #     message.from_user.full_name
+    # )
 
     text = (
         "🐉 <b>Добро пожаловать, воин Standoff2!</b>\n\n"
