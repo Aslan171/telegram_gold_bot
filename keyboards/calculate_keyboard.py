@@ -1,10 +1,10 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 def calc_main_kb() -> ReplyKeyboardMarkup:
-    kb = ReplyKeyboardMarkup(resize_keyboard=True)
-    kb.add(
-        KeyboardButton("Посчитать ₸ в G"),
-        KeyboardButton("Посчитать G в ₸")
-    )
-    kb.add(KeyboardButton("🏠Главное меню"))
+    kb = ReplyKeyboardMarkup()
+    kb.keyboard = [
+        [KeyboardButton("Посчитать ₸ в G"), KeyboardButton("Посчитать G в ₸")],
+        [KeyboardButton("🏠Главное меню")]
+    ]
+    kb.resize_keyboard = True
     return kb
