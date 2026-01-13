@@ -1,23 +1,25 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 async def get_admin_kb() -> InlineKeyboardMarkup:
-    kb = InlineKeyboardMarkup()
-    kb.inline_keyboard = [
+    inline_keyboard = [
         [InlineKeyboardButton("🔔 Уведомления", callback_data="admin_view_notifications"),
          InlineKeyboardButton("⚙ Настройки", callback_data="admin_settings")]
     ]
-    return kb
+    return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
 
 def notification_kb(notification_id: int, notif_type: str) -> InlineKeyboardMarkup:
-    kb = InlineKeyboardMarkup()
     if notif_type == "deposit":
-        kb.inline_keyboard = [
+        inline_keyboard = [
             [InlineKeyboardButton("✅ Одобрить", callback_data=f"approve_deposit:{notification_id}"),
              InlineKeyboardButton("❌ Отклонить", callback_data=f"reject_deposit:{notification_id}")]
         ]
     elif notif_type == "withdraw":
-        kb.inline_keyboard = [
+        inline_keyboard = [
             [InlineKeyboardButton("✅ Одобрить", callback_data=f"approve_withdraw:{notification_id}"),
              InlineKeyboardButton("❌ Отклонить", callback_data=f"reject_withdraw:{notification_id}")]
         ]
-    return kb
+    else:
+        inline_keyboard = [
+            [InlineKeyboardButton("❌ Неизвестный тип", callback_data="none")]
+        ]
+    return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
