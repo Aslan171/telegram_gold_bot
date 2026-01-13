@@ -7,6 +7,7 @@ def build_main_kb() -> ReplyKeyboardMarkup:
         [KeyboardButton("✅О боте"), KeyboardButton("📖Помощь и ответы")],
         [KeyboardButton("✨Продать голду"), KeyboardButton("🕹️Сменить игру")],
     ]
-    kb = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    kb = ReplyKeyboardMarkup()
+    kb.keyboard = keyboard
+    kb.resize_keyboard = True
     return kb
-
