@@ -43,9 +43,8 @@ from db.db_utils import init_db_pool, close_db_pool
 
 async def main():
     # --- Bot & Dispatcher ---
-    bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
-    storage = MemoryStorage()
-    dp = Dispatcher(storage=storage)
+    bot = Bot(token=BOT_TOKEN)
+    dp = Dispatcher()
 
     # --- Init DB ---
     await init_db_pool()
@@ -68,3 +67,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
