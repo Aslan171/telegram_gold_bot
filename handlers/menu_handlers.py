@@ -1,154 +1,71 @@
-from aiogram import Router, F
-from aiogram.types import Message
-from aiogram.filters import CommandStart
-from aiogram.fsm.context import FSMContext
+import asyncio
+import os
+from pathlib import Path
+from decimal import Decimal
 
-from keyboards.main_keyboard import build_main_kb
-from states.user_states import DepositState, WithdrawState, CalculateState
-from db.db_utils import ensure_user, get_balances
+from aiogram import Bot, Dispatcher
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.client.default import DefaultBotProperties
 
-router = Router()
+# --- Load .env if exists ---
+env_path = Path(".") / ".env"
+if env_path.exists():
+    from dotenv import load_dotenv
+    load_dotenv(dotenv_path=env_path)
 
-# =========================
-# /start
-# =========================
+# --- ENV vars ---
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+DATABASE_URL = os.getenv("DATABASE_URL")
+ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip()]
+CURRENCY_RATE = Decimal(os.getenv("CURRENCY_RATE", "5.5"))
+MIN_DEPOSIT = Decimal(os.getenv("MIN_DEPOSIT", "100"))
+WITHDRAW_MULTIPLIER = Decimal(os.getenv("WITHDRAW_MULTIPLIER", "1.0"))
 
-@router.message(CommandStart())
-async def start_handler(message: Message, state: FSMContext):
+# --- Mandatory check ---
+if not BOT_TOKEN:
+    raise RuntimeError("BOT_TOKEN не найден!")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL не найден!")
+
+# --- Debug info ---
+print("=== ENV CHECK ===")
+print("BOT_TOKEN:", BOT_TOKEN)
+print("DATABASE_URL:", DATABASE_URL)
+print("ADMIN_IDS:", ADMIN_IDS)
+print("CURRENCY_RATE:", CURRENCY_RATE)
+print("MIN_DEPOSIT:", MIN_DEPOSIT)
+print("WITHDRAW_MULTIPLIER:", WITHDRAW_MULTIPLIER)
+print("=================")
+
+# --- Imports ---
+from handlers import menu_handlers, withdraw, deposit, calculate, admin_handlers
+from db.db_utils import init_db_pool, close_db_pool
+
+async def main():
+    # --- Bot & Dispatcher ---
+    bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
+    storage = MemoryStorage()
+    dp = Dispatcher(storage=storage)
+
+    # --- Init DB ---
+    await init_db_pool()
+
+    # --- Register routers ---
+    dp.include_router(menu_handlers.router)
+    dp.include_router(withdraw.router)
+    dp.include_router(deposit.router)
+    dp.include_router(calculate.router)
+    dp.include_router(admin_handlers.router)
+
+    print("Bot started")
     try:
-        print("START OK")
-
-        await state.clear()
-
-        # await ensure_user(
-        #     message.from_user.id,
-        #     message.from_user.username,
-        #     message.from_user.full_name
-        # )
-
-        text = (
-            "🐉 Добро пожаловать, воин Standoff2!\n\n"
-            "Ты вошёл в Драконье хранилище Голды 🏆\n\n"
-            "🔥 Покупка и продажа Gold за тенге\n"
-            "⚡ Быстро • Честно • Безопасно\n\n"
-            "⚔️ Выбери действие ниже:"
-        )
-
-        # await message.answer("START OK")
-        await message.answer(text, reply_markup=build_main_kb())
-        print("Message sent successfully")
+        await dp.start_polling(bot)
     except Exception as e:
-        print(f"Error in start_handler: {e}")
-        await message.answer(f"Ошибка: {e}")
+        print("❌ Bot crashed:", e)
+    finally:
+        await bot.session.close()
+        await close_db_pool()
 
+if __name__ == "__main__":
+    asyncio.run(main())
 
-# =========================
-# Главное меню
-# =========================
-@router.message(F.text == "🏠Главное меню")
-async def main_menu(message: Message, state: FSMContext):
-    await state.clear()
-    await message.answer("🏠 Главное меню", reply_markup=build_main_kb())
-
-
-# =========================
-# Пополнить
-# =========================
-@router.message(F.text == "💰Пополнить")
-async def deposit_start(message: Message, state: FSMContext):
-    await state.set_state(DepositState.amount)
-    await message.answer(
-        "💰 Введите сумму в ₸, на которую хотите купить Gold:",
-        reply_markup=None
-    )
-
-
-# =========================
-# Вывести
-# =========================
-@router.message(F.text == "🌟Вывести")
-async def withdraw_start(message: Message, state: FSMContext):
-    await state.set_state(WithdrawState.amount)
-    await message.answer(
-        "🌟 Введите сумму Gold для вывода:",
-        reply_markup=None
-    )
-
-
-# =========================
-# Посчитать
-# =========================
-@router.message(F.text == "🔢Посчитать")
-async def calculate_start(message: Message, state: FSMContext):
-    await state.set_state(CalculateState.mode)
-    await message.answer(
-        "🔢 Выберите тип конвертации:",
-        reply_markup=None
-    )
-
-
-# =========================
-# Профиль
-# =========================
-@router.message(F.text == "🆔Профиль")
-async def profile(message: Message):
-    balances = await get_balances(message.from_user.id)
-    await message.answer(
-        f"👤 <b>Ваш профиль</b>\n\n"
-        f"💰 Gold: <b>{balances['g_balance']}</b>\n"
-        f"🏦 GT: <b>{balances['gt_balance']}</b>"
-    )
-
-
-# =========================
-# О боте
-# =========================
-@router.message(F.text == "✅О боте")
-async def about_bot(message: Message):
-    await message.answer(
-        "🐉 <b>DragonX Gold</b>\n\n"
-        "Сервис покупки и продажи Gold для Standoff2.\n"
-        "Безопасно. Быстро. Надёжно."
-    )
-
-
-# =========================
-# Помощь
-# =========================
-@router.message(F.text == "📖Помощь и ответы")
-async def help_bot(message: Message):
-    await message.answer(
-        "📖 <b>Помощь</b>\n\n"
-        "1️⃣ Выберите действие в меню\n"
-        "2️⃣ Следуйте инструкциям бота\n"
-        "3️⃣ При проблемах — напишите администратору"
-    )
-
-
-# =========================
-# Продать голду (заглушка)
-# =========================
-@router.message(F.text == "✨Продать голду")
-async def sell_gold(message: Message):
-    await message.answer("✨ Продажа Gold скоро будет доступна.")
-
-
-# =========================
-# Сменить игру (заглушка)
-# =========================
-@router.message(F.text == "🕹️Сменить игру")
-async def change_game(message: Message):
-    await message.answer("🕹️ Смена игры в разработке.")
-
-
-# =========================
-# Правила вывода
-# =========================
-@router.message(F.text == "📖Правила вывода Gold")
-async def rules_gold(message: Message):
-    await message.answer(
-        "📖 <b>Правила вывода Gold</b>\n\n"
-        "• Минимальная сумма — зависит от курса\n"
-        "• Проверка администратором\n"
-        "• Вывод только после подтверждения"
-    )
