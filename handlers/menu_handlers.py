@@ -15,26 +15,31 @@ router = Router()
 
 @router.message(CommandStart())
 async def start_handler(message: Message, state: FSMContext):
-    print("START OK")
+    try:
+        print("START OK")
 
-    await state.clear()
+        await state.clear()
 
-    # await ensure_user(
-    #     message.from_user.id,
-    #     message.from_user.username,
-    #     message.from_user.full_name
-    # )
+        # await ensure_user(
+        #     message.from_user.id,
+        #     message.from_user.username,
+        #     message.from_user.full_name
+        # )
 
-    text = (
-        "🐉 <b>Добро пожаловать, воин Standoff2!</b>\n\n"
-        "Ты вошёл в <b>Драконье хранилище Голды</b> 🏆\n\n"
-        "🔥 Покупка и продажа Gold за тенге\n"
-        "⚡ Быстро • Честно • Безопасно\n\n"
-        "⚔️ Выбери действие ниже:"
-    )
+        text = (
+            "🐉 Добро пожаловать, воин Standoff2!\n\n"
+            "Ты вошёл в Драконье хранилище Голды 🏆\n\n"
+            "🔥 Покупка и продажа Gold за тенге\n"
+            "⚡ Быстро • Честно • Безопасно\n\n"
+            "⚔️ Выбери действие ниже:"
+        )
 
-    # await message.answer("START OK")
-    await message.answer(text, reply_markup=build_main_kb())
+        # await message.answer("START OK")
+        await message.answer(text, reply_markup=build_main_kb())
+        print("Message sent successfully")
+    except Exception as e:
+        print(f"Error in start_handler: {e}")
+        await message.answer(f"Ошибка: {e}")
 
 
 # =========================
@@ -147,4 +152,3 @@ async def rules_gold(message: Message):
         "• Проверка администратором\n"
         "• Вывод только после подтверждения"
     )
-
