@@ -4,6 +4,8 @@ FROM python:3.11-slim
 # Устанавливаем системные зависимости для asyncpg
 RUN apt-get update && apt-get install -y gcc libpq-dev && rm -rf /var/lib/apt/lists/*
 
+RUN pip install --upgrade aiogram==3.5.0
+
 # Устанавливаем рабочую директорию
 WORKDIR /app
 
@@ -18,3 +20,4 @@ COPY . .
 
 # Указываем команду запуска бота
 CMD ["python", "zapusk.py"]
+
