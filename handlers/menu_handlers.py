@@ -33,7 +33,7 @@ async def start_handler(message: Message, state: FSMContext):
         "⚔️ Выбери действие ниже:"
     )
 
-    await message.answer("START OK")
+    # await message.answer("START OK")
     await message.answer(text, reply_markup=build_main_kb())
 
 
@@ -147,3 +147,4 @@ async def rules_gold(message: Message):
         "• Проверка администратором\n"
         "• Вывод только после подтверждения"
     )
+
