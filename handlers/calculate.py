@@ -16,7 +16,7 @@ async def calc_start(message: Message, state: FSMContext):
     await state.set_state(CalculateState.mode)
     await message.answer(
         "Выберите режим конвертации:",
-        reply_markup=calc_main_kb()
+        reply_markup=calc_main_kb()  # Клавиатура с кнопками
     )
 
 
@@ -24,6 +24,8 @@ async def calc_start(message: Message, state: FSMContext):
 @router.message(CalculateState.mode)
 async def choose_mode(message: Message, state: FSMContext):
     text = message.text.strip()
+
+    # Выбор через кнопки
     if text == "Посчитать ₸ в G":
         await state.update_data(mode="to_g")
     elif text == "Посчитать G в ₸":
@@ -33,11 +35,14 @@ async def choose_mode(message: Message, state: FSMContext):
         await message.answer("🏠 Главное меню", reply_markup=calc_main_kb())
         return
     else:
-        await message.answer("Выберите корректный режим.")
+        await message.answer("Пожалуйста, выберите один из вариантов на кнопках.")
         return
 
     await state.set_state(CalculateState.amount)
-    await message.answer("Введите сумму для конвертации:")
+    await message.answer(
+        "Введите сумму для конвертации:",
+        reply_markup=None  # Отключаем клавиатуру на ввод числа
+    )
 
 
 # --- Обработка суммы ---
@@ -69,4 +74,9 @@ async def calculate_amount(message: Message, state: FSMContext):
         result = gold_to_tenge(float(amount))
         await message.answer(f"{amount} G = {result} ₸")
 
+    # После конвертации возвращаем клавиатуру выбора режима
     await state.clear()
+    await message.answer(
+        "Выберите действие:",
+        reply_markup=calc_main_kb()
+    )
