@@ -1,5 +1,5 @@
 from aiogram import Router, F
-from aiogram.types import Message
+from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 from decimal import Decimal, InvalidOperation
 
@@ -16,7 +16,7 @@ async def calc_start(message: Message, state: FSMContext):
     await state.set_state(CalculateState.mode)
     await message.answer(
         "Выберите режим конвертации:",
-        reply_markup=calc_main_kb()  # Клавиатура с кнопками
+        reply_markup=calc_main_kb()  # Показываем клавиатуру
     )
 
 
@@ -25,23 +25,26 @@ async def calc_start(message: Message, state: FSMContext):
 async def choose_mode(message: Message, state: FSMContext):
     text = message.text.strip()
 
-    # Выбор через кнопки
     if text == "Посчитать ₸ в G":
         await state.update_data(mode="to_g")
     elif text == "Посчитать G в ₸":
         await state.update_data(mode="to_tenge")
     elif text in ["🏠Главное меню", "⬅Назад"]:
         await state.clear()
-        await message.answer("🏠 Главное меню", reply_markup=calc_main_kb())
+        await message.answer(
+            "🏠 Главное меню",
+            reply_markup=calc_main_kb()
+        )
         return
     else:
         await message.answer("Пожалуйста, выберите один из вариантов на кнопках.")
         return
 
     await state.set_state(CalculateState.amount)
+    # Скрываем клавиатуру при вводе числа
     await message.answer(
         "Введите сумму для конвертации:",
-        reply_markup=None  # Отключаем клавиатуру на ввод числа
+        reply_markup=ReplyKeyboardRemove()
     )
 
 
@@ -54,7 +57,10 @@ async def calculate_amount(message: Message, state: FSMContext):
 
     if text in ["🏠Главное меню", "⬅Назад"]:
         await state.clear()
-        await message.answer("🏠 Главное меню", reply_markup=calc_main_kb())
+        await message.answer(
+            "🏠 Главное меню",
+            reply_markup=calc_main_kb()
+        )
         return
 
     try:
