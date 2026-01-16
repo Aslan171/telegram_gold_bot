@@ -1,13 +1,32 @@
 from aiogram import Router, F
-from aiogram.types import Message, ReplyKeyboardRemove
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
 from decimal import Decimal, InvalidOperation
 
 from states.user_states import CalculateState
-from keyboards.calculate_keyboard import calc_main_kb
 from utils.calc_utils import tenge_to_gold, gold_to_tenge
 
 router = Router()
+
+
+# --- Клавиатуры ---
+def calc_main_kb() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton("Посчитать ₸ в G"), KeyboardButton("Посчитать G в ₸")],
+            [KeyboardButton("🏠Главное меню")]
+        ],
+        resize_keyboard=True
+    )
+
+
+def main_menu_kb() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton("🏠Главное меню")]
+        ],
+        resize_keyboard=True
+    )
 
 
 # --- Выбор режима конвертации ---
@@ -16,7 +35,7 @@ async def calc_start(message: Message, state: FSMContext):
     await state.set_state(CalculateState.mode)
     await message.answer(
         "Выберите режим конвертации:",
-        reply_markup=calc_main_kb()
+        reply_markup=calc_main_kb()  # Новая клавиатура заменит старую
     )
 
 
@@ -24,27 +43,22 @@ async def calc_start(message: Message, state: FSMContext):
 @router.message(CalculateState.mode)
 async def choose_mode(message: Message, state: FSMContext):
     text = message.text.strip()
-
     if text == "Посчитать ₸ в G":
         await state.update_data(mode="to_g")
     elif text == "Посчитать G в ₸":
         await state.update_data(mode="to_tenge")
     elif text in ["🏠Главное меню", "⬅Назад"]:
         await state.clear()
-        await message.answer(
-            "🏠 Главное меню",
-            reply_markup=calc_main_kb()
-        )
+        await message.answer("🏠 Главное меню", reply_markup=main_menu_kb())
         return
     else:
-        await message.answer("Пожалуйста, выберите вариант кнопками.")
+        await message.answer("Выберите корректный режим.", reply_markup=calc_main_kb())
         return
 
     await state.set_state(CalculateState.amount)
-    # Убираем клавиатуру перед вводом числа
     await message.answer(
         "Введите сумму для конвертации:",
-        reply_markup=ReplyKeyboardRemove(selective=True)
+        reply_markup=main_menu_kb()  # Меняем клавиатуру на «Главное меню» пока пользователь вводит число
     )
 
 
@@ -57,32 +71,24 @@ async def calculate_amount(message: Message, state: FSMContext):
 
     if text in ["🏠Главное меню", "⬅Назад"]:
         await state.clear()
-        await message.answer(
-            "🏠 Главное меню",
-            reply_markup=calc_main_kb()
-        )
+        await message.answer("🏠 Главное меню", reply_markup=main_menu_kb())
         return
 
     try:
         amount = Decimal(text)
     except InvalidOperation:
-        await message.answer("Введите корректное число.")
+        await message.answer("Введите корректное число.", reply_markup=main_menu_kb())
         return
 
     if amount < 0:
-        await message.answer("Сумма не может быть отрицательной.")
+        await message.answer("Сумма не может быть отрицательной.", reply_markup=main_menu_kb())
         return
 
     if mode == "to_g":
         result = tenge_to_gold(float(amount))
-        await message.answer(f"{amount} ₸ = {result} G")
+        await message.answer(f"{amount} ₸ = {result} G", reply_markup=main_menu_kb())
     else:
         result = gold_to_tenge(float(amount))
-        await message.answer(f"{amount} G = {result} ₸")
+        await message.answer(f"{amount} G = {result} ₸", reply_markup=main_menu_kb())
 
-    # Возвращаем клавиатуру выбора режима после конвертации
     await state.clear()
-    await message.answer(
-        "Выберите действие:",
-        reply_markup=calc_main_kb()
-    )
