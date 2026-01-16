@@ -1,5 +1,6 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
+from aiogram.filters import Command, StateFilter
 import os
 
 from db.db_utils import (
@@ -17,7 +18,8 @@ ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip()]
 # -----------------------------
 # /admin command
 # -----------------------------
-@router.message(F.text == "/admin")
+
+@router.message(Command("admin"), StateFilter(None))
 async def admin_panel(message: Message):
     if message.from_user.id not in ADMIN_IDS:
         await message.answer("❌ Нет доступа.")
@@ -30,7 +32,7 @@ async def admin_panel(message: Message):
 # -----------------------------
 # Просмотр всех уведомлений
 # -----------------------------
-@router.callback_query(F.data == "admin_view_notifications")
+@router.callback_query(F.data == "admin_view_notifications",  StateFilter(None))
 async def view_notifications_cb(call: CallbackQuery):
     if call.from_user.id not in ADMIN_IDS:
         await call.answer("❌ Нет доступа", show_alert=True)
@@ -88,9 +90,10 @@ async def handle_admin_cb(call: CallbackQuery, action: str, entity: str):
 # -----------------------------
 # Регистрация callback
 # -----------------------------
-@router.callback_query(lambda c: c.data and c.data.startswith(
-    ("approve_deposit:", "reject_deposit:", "approve_withdraw:", "reject_withdraw:")
-))
+@router.callback_query(
+    lambda c: c.data and c.data.startswith(("approve_deposit:", "reject_deposit:", "approve_withdraw:", "reject_withdraw:")),
+    StateFilter(None)
+)
 async def admin_callback(call: CallbackQuery):
     parts = call.data.split("_")
     action = parts[0]       # approve / reject
