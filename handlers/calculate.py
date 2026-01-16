@@ -16,7 +16,7 @@ async def calc_start(message: Message, state: FSMContext):
     await state.set_state(CalculateState.mode)
     await message.answer(
         "Выберите режим конвертации:",
-        reply_markup=calc_main_kb()  # Показываем клавиатуру
+        reply_markup=calc_main_kb()
     )
 
 
@@ -37,14 +37,14 @@ async def choose_mode(message: Message, state: FSMContext):
         )
         return
     else:
-        await message.answer("Пожалуйста, выберите один из вариантов на кнопках.")
+        await message.answer("Пожалуйста, выберите вариант кнопками.")
         return
 
     await state.set_state(CalculateState.amount)
-    # Скрываем клавиатуру при вводе числа
+    # Убираем клавиатуру перед вводом числа
     await message.answer(
         "Введите сумму для конвертации:",
-        reply_markup=ReplyKeyboardRemove()
+        reply_markup=ReplyKeyboardRemove(selective=True)
     )
 
 
@@ -80,7 +80,7 @@ async def calculate_amount(message: Message, state: FSMContext):
         result = gold_to_tenge(float(amount))
         await message.answer(f"{amount} G = {result} ₸")
 
-    # После конвертации возвращаем клавиатуру выбора режима
+    # Возвращаем клавиатуру выбора режима после конвертации
     await state.clear()
     await message.answer(
         "Выберите действие:",
