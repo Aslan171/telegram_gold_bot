@@ -81,6 +81,8 @@ async def handle_deposit_amount(message: Message, state: FSMContext):
 # --- Выбор метода оплаты ---
 @router.callback_query(F.data.startswith("deposit_method:"))
 async def handle_deposit_method(call: CallbackQuery, state: FSMContext):
+    print("[DEBUG] handle_deposit_method вызван")
+    await call.message.answer("[DEBUG] Обработчик handle_deposit_method вызван")
     await call.answer()  # ✅ КРИТИЧЕСКИ ВАЖНО
 
     method = call.data.split(":")[1]
