@@ -112,6 +112,7 @@ async def handle_deposit_method(call: CallbackQuery, state: FSMContext):
     except Exception as e:
         print(f"[deposit] Ошибка при edit_text: {e}")
         await call.message.answer("Произошла ошибка при отображении реквизитов. Попробуйте ещё раз или обратитесь к администратору.")
+        await call.message.answer(str(e))
 
     await state.set_state(DepositState.waiting_receipt)
 
