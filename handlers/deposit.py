@@ -100,14 +100,18 @@ async def handle_deposit_method(call: CallbackQuery, state: FSMContext):
     card_number = "4400-4303-3359-3462"
     amount = data.get("amount")
 
-    await call.message.edit_text(
-        f"🏦 Оплата: {method.capitalize()}\n"
-        f"👤 Получатель: Аслан Ш\n"
-        f"💳 Реквизиты: {card_number}\n"
-        f"💰 Сумма: {amount}₸\n\n"
-        f"✅ После оплаты нажмите «Я оплатил»",
-        reply_markup=deposit_confirm_kb(amount, card_number)
-    )
+    try:
+        await call.message.edit_text(
+            f"🏦 Оплата: {method.capitalize()}\n"
+            f"👤 Получатель: Аслан Ш\n"
+            f"💳 Реквизиты: {card_number}\n"
+            f"💰 Сумма: {amount}₸\n\n"
+            f"✅ После оплаты нажмите «Я оплатил»",
+            reply_markup=deposit_confirm_kb(amount, card_number)
+        )
+    except Exception as e:
+        print(f"[deposit] Ошибка при edit_text: {e}")
+        await call.message.answer("Произошла ошибка при отображении реквизитов. Попробуйте ещё раз или обратитесь к администратору.")
 
     await state.set_state(DepositState.waiting_receipt)
 
