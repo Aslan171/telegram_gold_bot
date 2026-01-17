@@ -129,27 +129,33 @@ async def deposit_paid(call: CallbackQuery, state: FSMContext):
 # --- Пользователь прислал квитанцию ---
 @router.message(DepositState.waiting_receipt, F.content_type == "photo")
 async def receive_receipt(message: Message, state: FSMContext):
-    data = await state.get_data()
-    deposit_id = data.get("deposit_id")
+    print("[DEBUG] receive_receipt вызван")
+    await message.answer("[DEBUG] receive_receipt вызван")
+    try:
+        data = await state.get_data()
+        deposit_id = data.get("deposit_id")
 
-    if not deposit_id:
+        if not deposit_id:
+            await message.answer(
+                "❗ Произошла ошибка, начните снова.",
+                reply_markup=build_main_kb()
+            )
+            await state.clear()
+            return
+
+        photo: PhotoSize = message.photo[-1]
+        file_path = await save_photo(photo, message.from_user.id)
+        await attach_deposit_receipt(deposit_id, file_path)
+
         await message.answer(
-            "❗ Произошла ошибка, начните снова.",
-            reply_markup=build_main_kb()
+            "🔹 Квитанция получена. Ожидайте проверки админом.",
+            reply_markup=deposit_after_receipt_kb()
         )
+
         await state.clear()
-        return
-
-    photo: PhotoSize = message.photo[-1]
-    file_path = await save_photo(photo, message.from_user.id)
-    await attach_deposit_receipt(deposit_id, file_path)
-
-    await message.answer(
-        "🔹 Квитанция получена. Ожидайте проверки админом.",
-        reply_markup=deposit_after_receipt_kb()
-    )
-
-    await state.clear()
+    except Exception as e:
+        print(f"[deposit] Ошибка в receive_receipt: {e}")
+        await message.answer(f"Ошибка при обработке квитанции: {e}")
 
 
 # --- Отмена ---
@@ -161,4 +167,3 @@ async def deposit_cancel(call: CallbackQuery, state: FSMContext):
         "❌ Пополнение отменено.",
         reply_markup=None
     )
-
