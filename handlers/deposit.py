@@ -1,5 +1,6 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, PhotoSize
+from aiogram import Bot
 from aiogram.fsm.context import FSMContext
 from decimal import Decimal, InvalidOperation
 
@@ -15,9 +16,13 @@ from db.db_utils import (
     create_deposit,
     attach_deposit_receipt,
 )
-from utils.image_utils import save_photo
+
+import os
 
 router = Router()
+
+# Получаем список админов из переменных окружения
+ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip()]
 
 RATE = Decimal(5.5)
 MIN_DEPOSIT = Decimal(210.0)
@@ -144,8 +149,13 @@ async def receive_receipt(message: Message, state: FSMContext):
             return
 
         photo: PhotoSize = message.photo[-1]
-        file_path = await save_photo(photo, message.from_user.id)
-        await attach_deposit_receipt(deposit_id, file_path)
+        file_id = photo.file_id
+        await attach_deposit_receipt(deposit_id, file_id)
+
+        # Получаем сумму и user_id для админов
+        amount = data.get("amount")
+        user_id = message.from_user.id
+        await send_receipt_to_admins(message.bot, file_id, amount, user_id, deposit_id)
 
         await message.answer(
             "🔹 Квитанция получена. Ожидайте проверки админом.",
@@ -157,6 +167,21 @@ async def receive_receipt(message: Message, state: FSMContext):
         print(f"[deposit] Ошибка в receive_receipt: {e}")
         await message.answer(f"Ошибка при обработке квитанции: {e}")
 
+# Отправка квитанции и информации админам
+async def send_receipt_to_admins(bot: Bot, file_id: str, amount, user_id, deposit_id):
+    from keyboards.admin_keyboard import notification_kb
+    text = (
+        f"💸 Новый депозит на проверку!\n"
+        f"Сумма: {amount}₸\n"
+        f"User ID: {user_id}\n"
+        f"Deposit ID: {deposit_id}"
+    )
+    kb = notification_kb(deposit_id, "deposit")
+    for admin_id in ADMIN_IDS:
+        try:
+            await bot.send_photo(admin_id, file_id, caption=text, reply_markup=kb)
+        except Exception as e:
+            print(f"[deposit] Не удалось отправить квитанцию админу {admin_id}: {e}")
 
 # --- Отмена ---
 @router.callback_query(F.data == "deposit_cancel")
@@ -167,3 +192,4 @@ async def deposit_cancel(call: CallbackQuery, state: FSMContext):
         "❌ Пополнение отменено.",
         reply_markup=None
     )
+
