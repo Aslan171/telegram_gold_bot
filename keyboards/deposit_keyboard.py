@@ -20,6 +20,6 @@ def deposit_after_receipt_kb() -> InlineKeyboardMarkup:
 def deposit_confirm_kb(amount: float, card_number: str) -> InlineKeyboardMarkup:
     inline_keyboard = [
         [InlineKeyboardButton(text="✅ Я оплатил", callback_data="deposit_paid"),
-         InlineKeyboardButton("❌ Отмена", callback_data="deposit_cancel")]
+         InlineKeyboardButton(text="❌ Отмена", callback_data="deposit_cancel")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
