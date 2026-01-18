@@ -90,11 +90,11 @@ async def handle_admin_cb(call: CallbackQuery, action: str, entity: str):
         from db.db_utils import get_user
         dep_user = None
         amount_gt = None
+        import asyncpg
         if action == "approve" and ok:
             # Получить user_id и сумму депозита
-            import asyncpg
-            global _pool
-            async with _pool.acquire() as conn:
+            from db import db_utils
+            async with db_utils._pool.acquire() as conn:
                 dep = await conn.fetchrow("SELECT user_id, amount_gt FROM deposits WHERE id=$1", entity_id)
                 if dep:
                     dep_user = dep["user_id"]
@@ -102,9 +102,8 @@ async def handle_admin_cb(call: CallbackQuery, action: str, entity: str):
             if dep_user:
                 await notify_deposit_approved(bot, dep_user, amount_gt)
         elif action == "reject" and ok:
-            import asyncpg
-            global _pool
-            async with _pool.acquire() as conn:
+            from db import db_utils
+            async with db_utils._pool.acquire() as conn:
                 dep = await conn.fetchrow("SELECT user_id FROM deposits WHERE id=$1", entity_id)
                 if dep:
                     dep_user = dep["user_id"]
