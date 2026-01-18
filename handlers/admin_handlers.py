@@ -10,7 +10,7 @@ from db.db_utils import (
     approve_withdrawal,
     reject_withdrawal,
 )
-from .notify_user import notify_deposit_approved, notify_deposit_rejected
+from handlers.notify_user import notify_deposit_approved, notify_deposit_rejected
 from keyboards.admin_keyboard import get_admin_kb, notification_kb
 
 router = Router()
@@ -126,4 +126,3 @@ async def admin_callback(call: CallbackQuery):
     action = parts[0]       # approve / reject
     entity = parts[1].split(":")[0]  # deposit / withdraw
     await handle_admin_cb(call, action, entity)
-
