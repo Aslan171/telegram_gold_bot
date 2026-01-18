@@ -10,6 +10,7 @@ from db.db_utils import (
     approve_withdrawal,
     reject_withdrawal,
 )
+from handlers.notify_user import notify_deposit_approved, notify_deposit_rejected
 from keyboards.admin_keyboard import get_admin_kb, notification_kb
 
 router = Router()
@@ -82,6 +83,33 @@ async def handle_admin_cb(call: CallbackQuery, action: str, entity: str):
         return
 
     ok = await func_map[key](entity_id, call.from_user.id)
+    # Уведомление пользователя о результате
+    if entity == "deposit":
+        from aiogram import Bot
+        bot: Bot = call.bot
+        from db.db_utils import get_user
+        dep_user = None
+        amount_gt = None
+        if action == "approve" and ok:
+            # Получить user_id и сумму депозита
+            import asyncpg
+            global _pool
+            async with _pool.acquire() as conn:
+                dep = await conn.fetchrow("SELECT user_id, amount_gt FROM deposits WHERE id=$1", entity_id)
+                if dep:
+                    dep_user = dep["user_id"]
+                    amount_gt = dep["amount_gt"]
+            if dep_user:
+                await notify_deposit_approved(bot, dep_user, amount_gt)
+        elif action == "reject" and ok:
+            import asyncpg
+            global _pool
+            async with _pool.acquire() as conn:
+                dep = await conn.fetchrow("SELECT user_id FROM deposits WHERE id=$1", entity_id)
+                if dep:
+                    dep_user = dep["user_id"]
+            if dep_user:
+                await notify_deposit_rejected(bot, dep_user)
     text_ok = "✅ Одобрено" if action == "approve" and ok else "❌ Отклонено / ошибка"
     await call.answer(text_ok)
     await call.message.edit_reply_markup(reply_markup=None)
