@@ -16,6 +16,7 @@ from utils.image_utils import save_photo
 router = Router()
 
 MIN_WITHDRAW_G = Decimal("1.00")
+GOLD_RATE = Decimal("5.5")
 
 
 # ───────────────────────────────
@@ -60,7 +61,7 @@ async def withdraw_amount(message: Message, state: FSMContext):
         await message.answer(f"❌ Минимум для вывода — {MIN_WITHDRAW_G}G")
         return
 
-    price = amount_g * Decimal("5.5")  # курс из env при желании
+    price = amount_g * GOLD_RATE
 
     withdraw_id = await create_withdrawal(
         user_id=message.from_user.id,
@@ -69,18 +70,18 @@ async def withdraw_amount(message: Message, state: FSMContext):
     )
 
     await state.update_data(withdraw_id=withdraw_id)
+    await state.set_state(WithdrawState.screenshot)
 
     await message.answer(
         f"✅ Заявка на вывод {amount_g}G создана.\n"
-        "📸 Пришлите скриншот подтверждения:",
-        reply_markup=None
+        "📸 Пришлите скриншот подтверждения."
     )
 
 
 # ───────────────────────────────
 # ПОЛУЧЕНИЕ СКРИНШОТА
 # ───────────────────────────────
-@router.message(WithdrawState.amount, F.photo)
+@router.message(WithdrawState.screenshot, F.photo)
 async def withdraw_screenshot(message: Message, state: FSMContext):
     data = await state.get_data()
     withdraw_id = data.get("withdraw_id")
@@ -103,7 +104,7 @@ async def withdraw_screenshot(message: Message, state: FSMContext):
 
 
 # ───────────────────────────────
-# ОТМЕНА
+# ОТМЕНА (глобальная)
 # ───────────────────────────────
 @router.message(F.text == "⬅Назад")
 async def withdraw_cancel(message: Message, state: FSMContext):
